@@ -26,13 +26,15 @@ namespace SdlWrapper
 
         void clear(const SDL_Color& background);
         
-        void drawTexture(const std::string& path, const SDL_Point& point);
+        void drawTexture(const std::string& path, const SDL_Point& point, double scale);
 
         void drawRect(const SDL_Rect& rect, const SDL_Color& color, FillType filling);
 
         void drawLine(const SDL_Point& from, const SDL_Point& to, 
                       const SDL_Color& color);
         
+        void drawPoint(const SDL_Point& point, const SDL_Color& color);
+
         void showMessage(MessageType type, const std::string& title, 
                          const std::string& message);
         

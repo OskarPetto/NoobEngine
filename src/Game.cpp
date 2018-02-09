@@ -13,11 +13,11 @@ namespace SdlWrapper
         mRenderer.loadTexture(path);
     }
 
-    void Game::addTexture(const std::string& path, const SDL_Point& point)
+    void Game::addTexture(const std::string& path, const SDL_Point& point, double scale)
     {
-        mDrawOperations.push_back([this, path, point]() 
+        mDrawOperations.push_back([this, path, point, scale]() 
             {
-                mRenderer.drawTexture(path, point);
+                mRenderer.drawTexture(path, point, scale);
             });
     }
 
@@ -35,6 +35,14 @@ namespace SdlWrapper
         mDrawOperations.push_back([this, from, to, color]()
         {
             mRenderer.drawLine(from, to, color);
+        });
+    }
+
+    void Game::addPoint(const SDL_Point& point, const SDL_Color& color)
+    {
+        mDrawOperations.push_back([this, point, color]()
+        {
+            mRenderer.drawPoint(point, color);
         });
     }
 

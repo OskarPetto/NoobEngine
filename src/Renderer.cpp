@@ -32,8 +32,11 @@ namespace SdlWrapper
         checkReturnValue(SDL_RenderClear(mRenderer.get()));
     }
 
-    void Renderer::drawTexture(const std::string& path, const SDL_Point& point)
+    void Renderer::drawTexture(const std::string& path, const SDL_Point& point, double scale)
     {
+        if (scale <= 0)
+            return;
+            
         Texture texture = mTextureManager.getTexture(mRenderer, path);  
 
         SDL_Rect src{};
@@ -45,6 +48,9 @@ namespace SdlWrapper
 
         dst.x = point.x;
         dst.y = point.y;
+
+        dst.w = (int)(texture.getWidth() * scale);
+        dst.h = (int)(texture.getHeight() * scale);
 
         checkReturnValue(SDL_RenderCopy(mRenderer.get(), texture.getTexture().get(), &src, &dst));
 
@@ -69,6 +75,14 @@ namespace SdlWrapper
                                         color.b, color.a));
 
         checkReturnValue(SDL_RenderDrawLine(mRenderer.get(), from.x, from.y, to.x, to.y));
+    }
+
+    void Renderer::drawPoint(const SDL_Point& point, const SDL_Color& color)
+    {
+        checkReturnValue(SDL_SetRenderDrawColor(mRenderer.get(), color.r, color.g, 
+                                                color.b, color.a));
+
+        checkReturnValue(SDL_RenderDrawPoint(mRenderer.get(), point.x, point.y));
     }
 
     void Renderer::showMessage(MessageType type, const std::string& title, 

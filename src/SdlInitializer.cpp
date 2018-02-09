@@ -1,5 +1,5 @@
 #include "../include/SdlInitializer.h"  
-        
+
 namespace SdlWrapper
 {
     unsigned int SdlInitializer::sInstanceCount = 0;

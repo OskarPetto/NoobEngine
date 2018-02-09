@@ -28,12 +28,14 @@ namespace SdlWrapper
 
         void loadTexture(const std::string& path);
 
-        void addTexture(const std::string& path, const SDL_Point& point);
+        void addTexture(const std::string& path, const SDL_Point& point, double scale);
 
         void addRect(const SDL_Rect& rect, const SDL_Color& color, FillType filling);
 
         void addLine(const SDL_Point& from, const SDL_Point& to, 
                      const SDL_Color& color);
+
+        void addPoint(const SDL_Point& point, const SDL_Color& color);
 
         void addEventHandler(EventType event, EventHandler handleEvent);
 
