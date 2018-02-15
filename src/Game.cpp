@@ -4,20 +4,39 @@ namespace SdlWrapper
 {
 
     Game::Game(const std::string& title, Uint32 width, Uint32 height, 
-               const SDL_Color& background) 
+               const SDL_Color& background, UpdateHandler handleUpdate) 
         : mRenderer(title, width, height), mBackground(background), 
-          mStatus(GameState::RUNNING) {}
+          mStatus(GameState::RUNNING), mUpdateHandler(handleUpdate) {}
 
-    void Game::loadTexture(const std::string& path)
+    void Game::loadTexture(const std::string& path, SDL_bool enableColorKey, 
+                           const SDL_Color& colorKey)
     {
-        mRenderer.loadTexture(path);
+        mRenderer.loadTexture(path, enableColorKey, colorKey);
     }
 
-    void Game::addTexture(const std::string& path, const SDL_Point& point, double scale)
+    void Game::loadAnimation(const std::string& name, const int framesPerRect, 
+                             const std::vector<SDL_Rect>& rects)
     {
-        mDrawOperations.push_back([this, path, point, scale]() 
+        mRenderer.loadAnimation(name, framesPerRect, rects);
+    }
+
+    void Game::addAnimation(const std::string& path, const std::string& name,
+                            const SDL_Point& position, double scale, 
+                            int angle, const SDL_RendererFlip flip)
+    {
+        mDrawOperations.push_back([this, path, name, position, scale, angle, flip]()
             {
-                mRenderer.drawTexture(path, point, scale);
+                mRenderer.drawAnimation(path, name, position, scale, angle, flip);
+            });
+    }
+
+    void Game::addTexture(const std::string& path, const SDL_Rect& src, 
+                          const SDL_Point& position, double scale, 
+                          int angle, const SDL_RendererFlip flip)
+    {
+        mDrawOperations.push_back([this, path, src, position, scale, angle, flip]()
+            {
+                mRenderer.drawTexture(path, src, position, scale, angle, flip);
             });
     }
 
@@ -46,14 +65,9 @@ namespace SdlWrapper
         });
     }
 
-    void Game::addEventHandler(EventType event, EventHandler handleEvent)
+    void Game::addEventHandler(EventHandler handleEvent)
     {
-        mEventHandlers.insert(std::make_pair(event, handleEvent));
-    }
-
-    void Game::addUpdateHandler(UpdateHandler handleUpdate)
-    {
-        mUpdateHandlers.push_back(handleUpdate);
+        mEventHandlers.push_back(handleEvent);
     }
 
     void Game::loop(Uint32 fps)
@@ -73,33 +87,40 @@ namespace SdlWrapper
 
             while (SDL_PollEvent(&event) != 0)
             {
-                invokeEventHandler(event);
-                
-                if (event.type == SDL_QUIT)
-                    mStatus = GameState::QUIT;
+                for (auto handleEvent : mEventHandlers)
+                {
+                    mStatus = handleEvent(event);
 
+                    if (mStatus == GameState::RUNNING)
+                    {
+                        mGameTimer.resume();
+                    }
+                    else
+                    {
+                        mGameTimer.pause();
+                    } 
+                    
+                    if (event.type == SDL_QUIT)
+                    {
+                        mStatus = GameState::QUIT;
+                        break;
+                    }
+                }
+    
             }
             
-            Uint32 gameTime = mGameTimer.getTime();
-
-            for (auto handleUpdate : mUpdateHandlers)
-            {
-                handleUpdate(gameTime);    
-            }
+            mUpdateHandler(*this);    
 
             mRenderer.clear(mBackground);
 
             // perform draw operations and erase them
 
-            auto newEnd = std::remove_if(mDrawOperations.begin(), 
-                                        mDrawOperations.end(),
-                                        [](std::function<void()> draw) 
-                                        {
-                                            draw();
-                                            return true;
-                                        });
+            for (auto draw : mDrawOperations)
+            {
+                draw();
+            }
 
-            mDrawOperations.erase(newEnd, mDrawOperations.end());
+            mDrawOperations.clear();
 
             mRenderer.present();
 
@@ -114,26 +135,9 @@ namespace SdlWrapper
         
     }
 
-    void Game::invokeEventHandler(const SDL_Event& event)
+    Uint32 Game::getTime()
     {
-        auto handleIter = mEventHandlers.find(event.type);
-        if (handleIter == mEventHandlers.end())
-            return;
-
-        auto handleEvent = handleIter->second;
-
-        mStatus = handleEvent(event);
-
-        if (mStatus == GameState::RUNNING)
-        {
-            mGameTimer.resume();
-        }
-        else
-        {
-            mGameTimer.pause();
-        } 
-
+        return mGameTimer.getTime();
     }
-    
 
 }

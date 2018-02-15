@@ -2,21 +2,31 @@
 
 namespace SdlWrapper
 {
-    Texture::Texture(UniqueRenderer& renderer, const std::string& path)
+    Texture::Texture(UniqueRenderer& renderer, const std::string& path, 
+                     SDL_bool enableColorKey, const SDL_Color& colorKey)
     {
         UniqueSurface surface{IMG_Load(path.c_str())};
 
         checkPointer(surface.get());
 
-        mTexture.reset(SDL_CreateTextureFromSurface(renderer.get(), surface.get()));
+        checkReturnValue(SDL_SetColorKey(surface.get(), enableColorKey,
+                                             SDL_MapRGB(surface.get()->format, 
+                                             colorKey.r, colorKey.g, colorKey.b)));
 
-        checkPointer(mTexture.get());
+        mTexture = SDL_CreateTextureFromSurface(renderer.get(), surface.get());
 
-        checkReturnValue(SDL_QueryTexture(mTexture.get(), nullptr, nullptr, &mWidth, &mHeight));
+        checkPointer(mTexture);
+
+        checkReturnValue(SDL_QueryTexture(mTexture, nullptr, nullptr, &mWidth, &mHeight));
 
     }
 
-    SharedTexture Texture::getTexture() const
+    Texture::~Texture()
+    {
+        SdlDeleter()(mTexture);
+    }
+
+    SDL_Texture *Texture::getTexture() const
     {
         return mTexture;
     }

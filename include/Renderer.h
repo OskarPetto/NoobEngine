@@ -1,6 +1,7 @@
 #pragma once
 
 #include "TextureManager.h"
+#include "AnimationManager.h"
 
 namespace SdlWrapper
 {
@@ -22,11 +23,21 @@ namespace SdlWrapper
         public:
         explicit Renderer(const std::string& title, Uint32 width, Uint32 height);
 
-        void loadTexture(const std::string& path);
+        void loadTexture(const std::string& path, SDL_bool enableColorKey, 
+                         const SDL_Color& colorKey);
+
+        void loadAnimation(const std::string& name, const int framesPerRect, 
+                           const std::vector<SDL_Rect>& rects);
 
         void clear(const SDL_Color& background);
-        
-        void drawTexture(const std::string& path, const SDL_Point& point, double scale);
+
+        void drawAnimation(const std::string& path, const std::string& name,
+                           const SDL_Point& position, double scale, 
+                           int angle, const SDL_RendererFlip flip);
+
+        void drawTexture(const std::string& path, const SDL_Rect& src,
+                         const SDL_Point& position, double scale, 
+                         int angle, const SDL_RendererFlip flip);
 
         void drawRect(const SDL_Rect& rect, const SDL_Color& color, FillType filling);
 
@@ -46,6 +57,6 @@ namespace SdlWrapper
         UniqueRenderer mRenderer;
 
         TextureManager mTextureManager;
-
+        AnimationManager mAnimationManager;
     };
 }

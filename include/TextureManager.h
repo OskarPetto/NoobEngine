@@ -8,13 +8,12 @@ namespace SdlWrapper
     class TextureManager
     {
         public:
-        void loadTexture(UniqueRenderer& renderer, 
-                            const std::string& path);
+        void loadTexture(UniqueRenderer& renderer, const std::string& path,
+                         SDL_bool enableColorKey, const SDL_Color& colorKey);
                             
-        Texture getTexture(UniqueRenderer& renderer, 
-                            const std::string& path);
+        const Texture& getTexture(const std::string& path) const;
 
         private:
-        std::unordered_map<std::string, Texture> mTextures;
+        std::unordered_map<std::string, std::unique_ptr<Texture>> mTextures;
     };
 }

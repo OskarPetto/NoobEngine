@@ -1,6 +1,5 @@
 #include "../include/Renderer.h"
 
-
 namespace SdlWrapper
 {
     Renderer::Renderer(const std::string& title, Uint32 width, Uint32 height)
@@ -12,15 +11,23 @@ namespace SdlWrapper
 
         checkPointer(mWindow.get());
 
-        mRenderer.reset(SDL_CreateRenderer(mWindow.get(), -1, 0));
+        mRenderer.reset(SDL_CreateRenderer(mWindow.get(), -1, 
+                        SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC));
 
         checkPointer(mRenderer.get());
 
     }
 
-    void Renderer::loadTexture(const std::string& path)
+    void Renderer::loadTexture(const std::string& path, SDL_bool enableColorKey, 
+                               const SDL_Color& colorKey)
     {
-        mTextureManager.loadTexture(mRenderer, path);
+        mTextureManager.loadTexture(mRenderer, path, enableColorKey, colorKey);
+    }
+
+    void Renderer::loadAnimation(const std::string& name, const int framesPerRect, 
+                                 const std::vector<SDL_Rect>& rects)
+    {
+        mAnimationManager.loadAnimation(name, framesPerRect, rects);
     }
 
     void Renderer::clear(const SDL_Color& background)
@@ -32,29 +39,43 @@ namespace SdlWrapper
         checkReturnValue(SDL_RenderClear(mRenderer.get()));
     }
 
-    void Renderer::drawTexture(const std::string& path, const SDL_Point& point, double scale)
+    void Renderer::drawAnimation(const std::string& path, const std::string& name, 
+                                 const SDL_Point& position, double scale, 
+                                 int angle, const SDL_RendererFlip flip)
     {
-        if (scale <= 0)
-            return;
-            
-        Texture texture = mTextureManager.getTexture(mRenderer, path);  
+        SDL_Rect src = mAnimationManager.getNextRect(name);
 
-        SDL_Rect src{};
-        SDL_Rect dst{};
-
-
-        src.w = texture.getWidth();
-        src.h = texture.getHeight();
-
-        dst.x = point.x;
-        dst.y = point.y;
-
-        dst.w = (int)(texture.getWidth() * scale);
-        dst.h = (int)(texture.getHeight() * scale);
-
-        checkReturnValue(SDL_RenderCopy(mRenderer.get(), texture.getTexture().get(), &src, &dst));
+        this->drawTexture(path, src, position, scale, angle, flip);        
 
     }
+
+    void Renderer::drawTexture(const std::string& path, const SDL_Rect& src, 
+                               const SDL_Point& position, double scale, 
+                               int angle, const SDL_RendererFlip flip)
+    {
+
+        SDL_Rect dst;
+
+        dst.x = position.x;
+        dst.y = position.y;
+        dst.w = (int) (src.w * scale);
+        dst.h = (int) (src.h * scale);
+
+        if (angle == 0 && flip == SDL_FLIP_NONE)
+        {
+            checkReturnValue(SDL_RenderCopy(mRenderer.get(), 
+                             mTextureManager.getTexture(path).getTexture(),
+                             &src, &dst));
+        }
+        else
+        {
+            checkReturnValue(SDL_RenderCopyEx(mRenderer.get(), 
+                             mTextureManager.getTexture(path).getTexture(),
+                             &src, &dst, angle, nullptr, flip));
+        }      
+
+    }
+
 
     void Renderer::drawRect(const SDL_Rect& rect, const SDL_Color& color, 
                             FillType filling)

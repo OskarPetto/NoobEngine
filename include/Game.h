@@ -3,11 +3,12 @@
 #include "SdlInitializer.h"
 #include "Renderer.h"
 #include "Timer.h"
-#include <vector>
 #include <algorithm>
 
 namespace SdlWrapper
 {
+    class Game;
+
     enum class GameState
     {
         QUIT,
@@ -17,18 +18,28 @@ namespace SdlWrapper
 
     using EventType = Uint32;
     using EventHandler = std::function<GameState(const SDL_Event& event)>;
-    using UpdateHandler = std::function<void(Uint32 gameTime)>;   
+    using UpdateHandler = std::function<void(Game& game)>;   
     using DrawOperation = std::function<void()>;
 
     class Game
     {
         public:
         Game(const std::string& title, Uint32 width, Uint32 height, 
-             const SDL_Color& background);
+             const SDL_Color& background, UpdateHandler handleUpdate);
 
-        void loadTexture(const std::string& path);
+        void loadTexture(const std::string& path, SDL_bool enableColorKey, 
+                         const SDL_Color& colorKey);
 
-        void addTexture(const std::string& path, const SDL_Point& point, double scale);
+        void loadAnimation(const std::string& path, const int framesPerRect, 
+                           const std::vector<SDL_Rect>& rects);
+
+        void addAnimation(const std::string& path, const std::string& name,
+                          const SDL_Point& position, double scale, 
+                          int angle, const SDL_RendererFlip flip);
+
+        void addTexture(const std::string& path, const SDL_Rect& src,
+                        const SDL_Point& position, double scale, 
+                        int angle, const SDL_RendererFlip flip);
 
         void addRect(const SDL_Rect& rect, const SDL_Color& color, FillType filling);
 
@@ -37,15 +48,13 @@ namespace SdlWrapper
 
         void addPoint(const SDL_Point& point, const SDL_Color& color);
 
-        void addEventHandler(EventType event, EventHandler handleEvent);
-
-        void addUpdateHandler(UpdateHandler handleUpdate);
+        void addEventHandler(EventHandler handleEvent);
 
         void loop(Uint32 fps);
 
-        private:
+        Uint32 getTime();
 
-        void invokeEventHandler(const SDL_Event& event);
+        private:
 
         SdlInitializer sdlInit;
 
@@ -58,8 +67,9 @@ namespace SdlWrapper
         Timer mFpsTimer;
         Timer mGameTimer;
 
-        std::unordered_map<EventType, EventHandler> mEventHandlers;
-        std::vector<UpdateHandler> mUpdateHandlers;      
+        UpdateHandler mUpdateHandler;              
+
+        std::vector<EventHandler> mEventHandlers;
 
         std::vector<DrawOperation> mDrawOperations;
 

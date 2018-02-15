@@ -2,27 +2,24 @@
 
 namespace SdlWrapper
 {
-    void TextureManager::loadTexture(UniqueRenderer& renderer, const std::string& path)
+    void TextureManager::loadTexture(UniqueRenderer& renderer, const std::string& path, 
+                                     SDL_bool enableColorKey, const SDL_Color& colorKey)
     {
         auto textureIterator = mTextures.find(path);
         if (textureIterator != mTextures.end())
             return;
 
-        Texture texture(renderer, path);
-        mTextures.insert(std::make_pair(path, texture));
+        mTextures.insert(std::make_pair(path, std::unique_ptr<Texture>(new Texture(
+                                              renderer, path, enableColorKey, colorKey))));
 
     }
 
-    Texture TextureManager::getTexture(UniqueRenderer& renderer, const std::string& path)
+    const Texture& TextureManager::getTexture(const std::string& path) const
     {
         auto textureIterator = mTextures.find(path);
-        if (textureIterator != mTextures.end())
-            return textureIterator->second;
+        if (textureIterator == mTextures.end())
+            throw std::runtime_error(path + " was not loaded\n");
 
-        Texture texture(renderer, path);
-        mTextures.insert(std::make_pair(path, texture));
-
-        return texture; 
-
+        return *(textureIterator->second.get()); 
     }
 }
